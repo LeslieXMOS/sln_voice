@@ -169,7 +169,7 @@
 #ifdef XK_VOICE_SQ66
     #define appconfI2S_IO_CORE                      2 /* Must be kept off core 0 with the RTOS tick ISR */
     #define appconfI2S_INTERRUPT_CORE               3 /* Must be kept off I/O cores. Best kept off core 0 with the tick ISR. */
-#elif
+#else
     #define appconfPDM_MIC_IO_CORE                  1 /* Must be kept off core 0 with the RTOS tick ISR */
     #define appconfI2S_IO_CORE                      2 /* Must be kept off core 0 with the RTOS tick ISR */
     #define appconfPDM_MIC_INTERRUPT_CORE           4 /* Must be kept off I/O cores. Best kept off core 0 with the tick ISR. */
