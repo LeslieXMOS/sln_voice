@@ -73,7 +73,7 @@ void i2s_slave_intertile(void *args) {
 
 #if ON_TILE(I2S_TILE_NO) && appconfRECOVER_MCLK_I2S_APP_PLL
 RTOS_I2S_APP_RESTART_CALLBACK_ATTR
-size_t i2s_restart_cb(rtos_i2s_t *ctx, void *app_data)
+i2s_restart_t i2s_restart_cb(rtos_i2s_t *ctx, void *app_data)
 {
     sw_pll_ctx_t* i2s_callback_args = (sw_pll_ctx_t*) app_data;
     port_clear_buffer(i2s_callback_args->p_bclk_count);
@@ -82,6 +82,8 @@ size_t i2s_restart_cb(rtos_i2s_t *ctx, void *app_data)
     uint16_t bclk_pt = port_get_trigger_time(i2s_callback_args->p_bclk_count); // Now grab bclk_count (which won't have changed)
     
     sw_pll_lut_do_control(i2s_callback_args->sw_pll, mclk_pt, bclk_pt);
+
+    return I2S_NO_RESTART;
 }
 
 void i2s_restart_callback_enable() {
