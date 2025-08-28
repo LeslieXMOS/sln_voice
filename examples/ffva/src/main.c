@@ -80,7 +80,7 @@ i2s_restart_t i2s_restart_cb(rtos_i2s_t *ctx, void *app_data)
     port_in(i2s_callback_args->p_bclk_count);                                  // Block until BCLK transition to synchronise. Will consume up to 1/64 of a LRCLK cycle
     uint16_t mclk_pt = port_get_trigger_time(i2s_callback_args->p_mclk_count); // Immediately sample mclk_count
     uint16_t bclk_pt = port_get_trigger_time(i2s_callback_args->p_bclk_count); // Now grab bclk_count (which won't have changed)
-    
+
     sw_pll_lut_do_control(i2s_callback_args->sw_pll, mclk_pt, bclk_pt);
 
     return I2S_NO_RESTART;
