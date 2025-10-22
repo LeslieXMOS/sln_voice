@@ -9,7 +9,7 @@
 	url = git@github.com:xmos/fwk_io.git
 [submodule "modules/rtos"]
 	path = modules/rtos
-	url = git@github.com:xmos/fwk_rtos.git
+	url = git@github.com:LeslieXMOS/fwk_rtos.git
 [submodule "modules/sample_rate_conversion/lib_src"]
 	path = modules/sample_rate_conversion/lib_src
 	url = git@github.com:xmos/lib_src.git
