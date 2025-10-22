@@ -87,6 +87,7 @@ endif()
 #**********************
 include(${CMAKE_CURRENT_LIST_DIR}/ffva_int.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/ffva_int_cyberon.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/ffva_int_cyberon_wakeword.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/ffva_ua.cmake)
 
 #**********************

@@ -32,6 +32,7 @@
 #include "fs_support.h"
 #include "gpi_ctrl.h"
 #include "leds.h"
+#include "audio_pipeline_dsp.h"
 #endif
 #include "gpio_test/gpio_test.h"
 
@@ -255,8 +256,15 @@ int audio_pipeline_output(void *output_app_data,
         ww_samples[j] = (uint32_t) *(output_audio_frames+j);
     }
 
+#if appconfINTENT_VNR_ENABLED
+    frame_data_t* frame_data = (frame_data_t*)output_audio_frames;
+    intent_engine_sample_push(ww_samples,
+                              frame_count,
+                              frame_data->vnr_pred_flag);
+#else
     intent_engine_sample_push(ww_samples,
                               frame_count);
+#endif
 #endif
 
     return AUDIO_PIPELINE_FREE_FRAME;
