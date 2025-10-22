@@ -126,6 +126,12 @@ void intent_engine_task(void *args)
 
     StreamBufferHandle_t input_queue = ((StreamBufferHandle_t*)args)[0];
     StreamBufferHandle_t input_vnr_queue = ((StreamBufferHandle_t*)args)[1];
+    TimerHandle_t int_eng_max_tmr = xTimerCreate(
+        "int_eng_max_tmr",
+        pdMS_TO_TICKS(appconfINTENT_MAX_WAKEUP_MS),
+        pdFALSE,
+        NULL,
+        vIntentTimerCallback);
     TimerHandle_t int_eng_tmr = xTimerCreate(
         "int_eng_tmr",
         pdMS_TO_TICKS(appconfINTENT_RESET_DELAY_MS),
@@ -210,6 +216,7 @@ void intent_engine_task(void *args)
         if (intent_state == STATE_EXPECTING_WAKEWORD && IS_KEYWORD(word_id)) {
             led_indicate_listening();
             xTimerStart(int_eng_tmr, 0);
+            xTimerStart(int_eng_max_tmr, 0);
             intent_engine_process_asr_result(word_id);
             intent_state = STATE_EXPECTING_COMMAND;
         } else if (intent_state == STATE_EXPECTING_COMMAND && IS_COMMAND(word_id)) {
