@@ -26,6 +26,44 @@ static void mclk_init(chanend_t other_tile_c)
 #endif
 }
 
+void rtos_custom_dfu_image_init(
+        rtos_dfu_image_t *dfu_image_ctx,
+        fl_QSPIPorts *qspi_ports,
+        fl_QuadDeviceSpec *qspi_specs,
+        unsigned int len)
+{
+    /**
+     * Flash partition
+     * Factory (ffva dfu), Update 0 (ffd), Data partition
+     */
+    memset(dfu_image_ctx, 0x00, sizeof(rtos_dfu_image_t));
+
+    xassert(fl_connectToDevice(qspi_ports, qspi_specs, len) == 0);
+
+    fl_BootImageInfo tmp_img;
+    dfu_image_ctx->data_partition_base_addr = fl_getDataPartitionBase();
+
+    /* Setup the factory image and upgrade image contexts.
+     * If no valid images are found, memset to 0 for app
+     * to check before using */
+    if (fl_getFactoryImage(&dfu_image_ctx->factory_image_ctx) == 0) {
+        memcpy(&tmp_img, &dfu_image_ctx->factory_image_ctx, sizeof(fl_BootImageInfo));
+        if (fl_getNextBootImage(&tmp_img) == 0) {
+            memcpy(&dfu_image_ctx->upgrade_image_ctx, &tmp_img, sizeof(fl_BootImageInfo));
+        } else {
+            // Next Boot Image is missing, which means the flash partition is not ready
+            while(fl_startImageAdd(&tmp_img, 2*1024*1024, 0));
+            memcpy(&dfu_image_ctx->upgrade_image_ctx, &tmp_img, sizeof(fl_BootImageInfo));
+            unsigned char page[256];
+            fl_writeImagePage(page);
+            fl_endWriteImage();
+        }
+    }
+    fl_disconnect();
+    rtos_printf("factory addr %x\n", dfu_image_ctx->factory_image_ctx.startAddress);
+    rtos_printf("app addr %x\n", dfu_image_ctx->upgrade_image_ctx.startAddress);
+}
+
 static void flash_init(void)
 {
 #if ON_TILE(FLASH_TILE_NO)
@@ -52,7 +90,7 @@ static void flash_init(void)
         .qspiClkblk = FLASH_CLKBLK,
     };
 
-    rtos_dfu_image_init(
+    rtos_custom_dfu_image_init(
             dfu_image_ctx,
             &qspi_ports,
             &qspi_spec,

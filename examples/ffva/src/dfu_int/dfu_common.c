@@ -49,12 +49,12 @@ uint32_t dfu_common_write_to_flash(uint8_t alt,
             }
             rtos_printf("Using addr 0x%x\nsize %u\n", dn_base_addr, bytes_avail);
             if(length > 0) {
-                unsigned cur_addr = dn_base_addr + (block_num * length);
+                unsigned cur_addr = dn_base_addr + total_len;// (block_num * length);
                 if((bytes_avail - total_len) >= length) {
                     rtos_printf("write %d at 0x%x\n", length, cur_addr);
 
                     size_t sector_size = rtos_qspi_flash_sector_size_get(qspi_flash_ctx);
-                    xassert(length == sector_size);
+                    xassert(length <= sector_size);
 
                     uint8_t *tmp_buf = rtos_osal_malloc( sizeof(uint8_t) * sector_size);
                     rtos_qspi_flash_lock(qspi_flash_ctx);

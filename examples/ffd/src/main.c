@@ -279,6 +279,10 @@ void startup_task(void *arg)
     gpio_gpi_init(gpio_ctx_t0);
 #endif
 
+// #if ON_TILE(1)
+//     gpio_test(gpio_ctx_t0);
+// #endif
+
 #if ON_TILE(FS_TILE_NO)
     rtos_fatfs_init(qspi_flash_ctx);
     // Setup flash low-level mode
