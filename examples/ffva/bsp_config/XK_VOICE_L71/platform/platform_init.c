@@ -311,15 +311,26 @@ static void uart_init(void)
 {
 #if appconfINTENT_ENABLED && ON_TILE(UART_TILE_NO)
     hwtimer_t tmr_tx = hwtimer_alloc();
+    hwtimer_t tmr_rx = hwtimer_alloc();
 
     rtos_uart_tx_init(
             uart_tx_ctx,
-            XS1_PORT_1A,    /* J4:24*/
+            XS1_PORT_1A,    /* J4:24*/ // SPI CSN
             appconfUART_BAUD_RATE,
             8,
             UART_PARITY_NONE,
             1,
             tmr_tx);
+
+    rtos_uart_rx_init(
+            uart_rx_ctx,
+            (1 << appconfUART_RX_IO_CORE),
+            XS1_PORT_1P,    // MISO
+            appconfUART_BAUD_RATE,
+            8,
+            UART_PARITY_NONE,
+            1,
+            tmr_rx);
 #endif
 }
 

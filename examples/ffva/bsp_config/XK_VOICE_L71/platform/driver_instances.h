@@ -14,6 +14,7 @@
 #include "rtos_dfu_image.h"
 #include "rtos_spi_slave.h"
 #include "rtos_uart_tx.h"
+#include "rtos_uart_rx.h"
 
 /* Config headers for sw_pll */
 #include "sw_pll.h"
@@ -67,6 +68,7 @@ extern rtos_spi_slave_t *spi_slave_ctx;
 extern rtos_i2s_t *i2s_ctx;
 extern rtos_dfu_image_t *dfu_image_ctx;
 extern rtos_uart_tx_t *uart_tx_ctx;
+extern rtos_uart_rx_t *uart_rx_ctx;
 
 typedef struct {
     port_t p_mclk_count;                    // Used for keeping track of MCLK output for sw_pll

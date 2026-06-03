@@ -36,6 +36,8 @@
 #endif
 #include "gpio_test/gpio_test.h"
 
+#include "ht_protocol_engine.h"
+
 /* Config headers for sw_pll */
 #include "sw_pll.h"
 
@@ -351,6 +353,54 @@ void i2s_rate_conversion_enable(void)
     rtos_i2s_receive_filter_cb_set(i2s_ctx, i2s_send_downsample_cb, NULL);
 }
 
+uint8_t wallpad_ready = 0;
+uint8_t wallpad_pcb_got = 0;
+uint8_t xmos_ready_sent = 0;
+
+void ht_protocol_xmos_ready(void *args)
+{
+    ht_protocol_handle_t* handler = (ht_protocol_handle_t*) args;
+    // Send ready after 1 second
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    ht_protocol_send_vrcp(handler, HT_VRCP_CMD_READY_SPEECH, NULL, 0, 0x00);    // hardcoded dst to 0x00 for wallpad
+    wallpad_ready = 0;
+    wallpad_pcb_got = 0;
+    xmos_ready_sent = 0;
+    vTaskDelete(NULL);
+}
+
+void ht_protocol_vddcp_cb(void* app_data, uint8_t src, uint8_t cmd, uint8_t param)
+{
+    // We should be the one sending VDDCP, so we just print the command
+    rtos_printf("Recv VDDCP, src: %02X, cmd: %02X, param: %02X\n", src, cmd, param);
+}
+
+void ht_protocol_vrcp_cb(void* app_data, uint8_t src, uint8_t cmd, uint8_t* params, uint8_t len)
+{
+    // We will do nothing for VRCP, just print the command
+    rtos_printf("Recv VRCP, src: %02X, cmd: %02X, param: \n", src, cmd);
+    for (int i = 0; i < len; i++) {
+        rtos_printf("%02X ", params[i]);
+    }
+    rtos_printf("\n");
+
+    if (cmd == HT_VRCP_CMD_READY_WALLPAD) {
+        wallpad_ready = 1;
+    } else if (cmd == HT_VRCP_CMD_EXCHANGE_KEY_PCB_TYPE) {
+        wallpad_pcb_got = 1;
+    }
+
+    if (!xmos_ready_sent && wallpad_ready && wallpad_pcb_got) {
+        xmos_ready_sent = 1;
+        xTaskCreate((TaskFunction_t) ht_protocol_xmos_ready,
+                    "ht_protocol_xmos_ready",
+                    RTOS_THREAD_STACK_SIZE(ht_protocol_xmos_ready),
+                    app_data,
+                    appconfSTARTUP_TASK_PRIORITY,
+                    NULL);
+    }
+}
+
 void vApplicationMallocFailedHook(void)
 {
     rtos_printf("Malloc Failed on tile %d!\n", THIS_XCORE_TILE);
@@ -361,7 +411,7 @@ void vApplicationMallocFailedHook(void)
 static void mem_analysis(void)
 {
 	for (;;) {
-		rtos_printf("Tile[%d]:\n\tMinimum heap free: %d\n\tCurrent heap free: %d\n", THIS_XCORE_TILE, xPortGetMinimumEverFreeHeapSize(), xPortGetFreeHeapSize());
+		// rtos_printf("Tile[%d]:\n\tMinimum heap free: %d\n\tCurrent heap free: %d\n", THIS_XCORE_TILE, xPortGetMinimumEverFreeHeapSize(), xPortGetFreeHeapSize());
 		vTaskDelay(pdMS_TO_TICKS(5000));
 	}
 }
@@ -425,8 +475,19 @@ void startup_task(void *arg)
 #endif
 
 #if appconfINTENT_ENABLED && ON_TILE(ASR_TILE_NO)
+    ht_protocol_handle_t ht_protocol_handler;
+    ht_protocol_handler.recv_byte = 0;
+    ht_protocol_handler.vddcp_cb = ht_protocol_vddcp_cb;
+    ht_protocol_handler.vrcp_cb = ht_protocol_vrcp_cb;
+    ht_protocol_handler.vddcp_sid = 0x00;
+    ht_protocol_handler.vrcp_sid = 0x00;
+    ht_protocol_handler.app_data = &ht_protocol_handler;
+    ht_protocol_engine_task_create(appconfINTENT_MODEL_RUNNER_TASK_PRIORITY, &ht_protocol_handler);
+
     QueueHandle_t q_intent = xQueueCreate(appconfINTENT_QUEUE_LEN, sizeof(int32_t));
-    intent_handler_create(appconfINTENT_MODEL_RUNNER_TASK_PRIORITY, q_intent);
+    void* intent_handler_args[2] = {q_intent, &ht_protocol_handler};
+
+    intent_handler_create(appconfINTENT_MODEL_RUNNER_TASK_PRIORITY, intent_handler_args);
     intent_engine_create(appconfINTENT_MODEL_RUNNER_TASK_PRIORITY, q_intent);
 #endif
 
